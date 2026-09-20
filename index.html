@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lights Out - darken them all</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:#0e0f1e; color:#ecedff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .card { max-width:520px; text-align:center; }
+  h1 { font-size:34px; margin-bottom:10px; }
+  .demo { display:flex; gap:6px; justify-content:center; margin-bottom:16px; }
+  .d { width:34px; height:34px; border-radius:8px; background:#252a52; }
+  .d.lit { background:#fbbf24; box-shadow:0 0 14px rgba(251,191,36,.55); }
+  p { color:#aab0e8; line-height:1.65; margin-bottom:20px; }
+  a.play { display:inline-block; background:#8b7cff; color:#0e0f1e; font-weight:700; padding:13px 34px; border-radius:999px; text-decoration:none; font-size:16px; }
+  .foot { margin-top:22px; color:#5b5f96; font-size:11.5px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>&#128161; Lights Out</h1>
+  <div class="demo"><div class="d"></div><div class="d lit"></div><div class="d lit"></div><div class="d"></div><div class="d lit"></div></div>
+  <p>The 90s handheld classic. Every tap flips one light and its four neighbors. Turn the whole board dark. Every puzzle is generated from real presses, so it is always solvable - beat par if you can. Four board sizes, best scores saved.</p>
+  <a class="play" href="app.html">Play Lights Out</a>
+  <div class="foot">Built by the hourly app factory - <a style="color:#8b7cff" href="https://github.com/iLanis-agent/lights-out">source</a></div>
+</div>
+</body>
+</html>
