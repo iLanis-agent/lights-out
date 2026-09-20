@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lights Out</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,sans-serif; background:#0e0f1e; color:#ecedff; min-height:100vh; padding:18px 12px 50px; }
+  .wrap { max-width:520px; margin:0 auto; }
+  header { text-align:center; margin-bottom:12px; }
+  header h1 { font-size:26px; }
+  header .tag { color:#7d83c0; font-size:12px; }
+  a { color:#8b7cff; text-decoration:none; }
+  .bar { display:flex; gap:8px; justify-content:center; margin-bottom:12px; flex-wrap:wrap; }
+  .pill { background:#1d2044; border:1px solid #2c3160; color:#aab0e8; border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .pill.on { background:#8b7cff; color:#0e0f1e; border-color:#8b7cff; }
+  .hud { display:flex; justify-content:center; gap:26px; margin-bottom:12px; font-variant-numeric:tabular-nums; }
+  .hud .c { text-align:center; }
+  .hud .v { font-size:21px; font-weight:800; }
+  .hud .k { font-size:10px; color:#7d83c0; text-transform:uppercase; letter-spacing:1px; }
+  #boardWrap { display:flex; justify-content:center; }
+  #board { display:grid; gap:8px; background:#1a1c38; padding:12px; border-radius:14px; }
+  .cell { width:52px; height:52px; border-radius:10px; background:#252a52; cursor:pointer; transition:background .12s, box-shadow .12s; }
+  .cell.lit { background:#fbbf24; box-shadow:0 0 18px rgba(251,191,36,.55); }
+  #msg { text-align:center; min-height:24px; margin-top:14px; font-size:15px; font-weight:700; }
+  .tools { display:flex; justify-content:center; gap:8px; margin-top:10px; }
+  .note { text-align:center; color:#5b5f96; font-size:11.5px; margin-top:14px; line-height:1.6; }
+  .best { color:#7d83c0; font-size:11.5px; text-align:center; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>&#128161; Lights Out</h1><div class="tag">tap a light - it and its neighbors flip. Darken them all.</div></header>
+  <div class="bar" id="sizes"></div>
+  <div class="hud">
+    <div class="c"><div class="v" id="moves">0</div><div class="k">moves</div></div>
+    <div class="c"><div class="v" id="par">-</div><div class="k">par</div></div>
+    <div class="c"><div class="v" id="lit">-</div><div class="k">lit</div></div>
+  </div>
+  <div id="boardWrap"><div id="board"></div></div>
+  <div id="msg"></div>
+  <div class="tools"><button class="pill" id="newPuzzle">New puzzle</button></div>
+  <div class="best" id="best"></div>
+  <div class="note">Every puzzle is solvable in at most par moves.<br><a href="index.html">about</a></div>
+</div>
+<script src="engine.js"></script>
+<script>
+var SIZES={s3:{label:'3x3',size:3,presses:4},s4:{label:'4x4',size:4,presses:6},s5:{label:'5x5',size:5,presses:8},s6:{label:'6x6',size:6,presses:10}};
+var BEST_KEY='lightsout-best-v1', SIZE_KEY='lightsout-size-v1';
+var S=null;
+function $(id){return document.getElementById(id);}
+function bestAll(){ try{return JSON.parse(localStorage.getItem(BEST_KEY))||{};}catch(_){return {};} }
+function saveBest(k,v){ var b=bestAll(); b[k]=v; try{localStorage.setItem(BEST_KEY,JSON.stringify(b));}catch(_){}}
+function newGame(key){
+  var cfg=SIZES[key];
+  var grid, tries=0;
+  do { grid=randomPuzzle(cfg.size,cfg.presses); tries++; } while(litCount(grid)<Math.ceil(cfg.presses/2) && tries<20);
+  S={key:key,size:cfg.size,par:cfg.presses,grid:grid,moves:0,over:false};
+  try{localStorage.setItem(SIZE_KEY,key);}catch(_){}
+  $('moves').textContent='0';
+  $('par').textContent=cfg.presses;
+  $('msg').textContent='';
+  renderSizes(); renderBoard(); renderBest();
+}
+function renderSizes(){
+  var s='';
+  for(var k in SIZES) s+='<button class="pill'+(S.key===k?' on':'')+'" data-k="'+k+'">'+SIZES[k].label+'</button>';
+  $('sizes').innerHTML=s;
+  document.querySelectorAll('#sizes .pill').forEach(function(b){ b.onclick=function(){ newGame(b.dataset.k); }; });
+}
+function renderBest(){
+  var b=bestAll()[S.key];
+  $('best').textContent=b?('best on '+SIZES[S.key].label+': '+b+' moves'):'';
+}
+function renderBoard(){
+  var b=$('board');
+  b.style.gridTemplateColumns='repeat('+S.size+', 1fr)';
+  var maxW=Math.min(window.innerWidth-64, 420);
+  var w=Math.floor((maxW-24-(S.size-1)*8)/S.size);
+  b.innerHTML='';
+  for(var i=0;i<S.size*S.size;i++){
+    var d=document.createElement('div');
+    d.className='cell'+(S.grid[i]?' lit':'');
+    d.dataset.i=i;
+    d.style.width=w+'px'; d.style.height=w+'px';
+    b.appendChild(d);
+  }
+  $('lit').textContent=litCount(S.grid);
+}
+function tap(i){
+  if(S.over) return;
+  var r=Math.floor(i/S.size), c=i%S.size;
+  S.grid=press(S.grid,S.size,r,c);
+  S.moves++;
+  $('moves').textContent=S.moves;
+  var cells=$('board').children;
+  for(var j=0;j<cells.length;j++) cells[j].classList.toggle('lit',!!S.grid[j]);
+  $('lit').textContent=litCount(S.grid);
+  if(isDark(S.grid)){
+    S.over=true;
+    var b=bestAll();
+    var extra='';
+    if(S.moves<=S.par) extra=' On par!';
+    if(!b[S.key]||S.moves<b[S.key]){ saveBest(S.key,S.moves); extra+=' New best!'; }
+    $('msg').textContent='All dark in '+S.moves+' moves.'+extra;
+    renderBest();
+  }
+}
+$('board').addEventListener('click',function(e){
+  var d=e.target.closest('.cell'); if(!d) return;
+  tap(+d.dataset.i);
+});
+$('newPuzzle').onclick=function(){ newGame(S.key); };
+window.addEventListener('resize',function(){ if(S) renderBoard(); });
+var start='s5';
+try{ start=localStorage.getItem(SIZE_KEY)||'s5'; if(!SIZES[start]) start='s5'; }catch(_){}
+newGame(start);
+</script>
+</body>
+</html>
